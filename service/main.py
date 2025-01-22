@@ -109,6 +109,7 @@ def flight_path():
 
 # send over the throw summary to get the flight directly.
 # Add a "z" to set the release height in meters, default is 1m
+# Add flight_numbers to use a specific flight numbers
 @app.route('/api/flight_path_from_summary', methods=['POST'])
 def flight_path_from_summary():
     content = request.json
@@ -238,14 +239,14 @@ def to_flight_path_request(throw_summary: Dict) -> Dict:
     flight_path_request["wy"] = -ang_velocity[1]
     flight_path_request["gamma"] = 0
 
-    flight_numbers = throw_summary.get("estimatedFlightNumbers", None)
+    flight_numbers = throw_summary.get("flight_numbers", None)
     if not flight_numbers:
-        flight_numbers = throw_summary.get("flight_numbers", None)
+        flight_numbers = throw_summary.get("estimatedFlightNumbers", None)
 
     if flight_numbers:
         flight_path_request["flight_numbers"] = flight_numbers
     else:
-        raise ValueError("Must specify flight numbers")
+        raise ValueError("Must specify flight_numbers")
 
     return flight_path_request
 
