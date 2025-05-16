@@ -96,6 +96,7 @@ class Discs:
         speed: float
         turn: float
         weight: float = 0.175
+        diameter: float = 0.211
 
     @staticmethod
     # def from_flight_numbers(speed: float, glide: float, turn: float, fade: float, weight: float = 0.175) -> Model:
@@ -104,6 +105,7 @@ class Discs:
         glide = float(nums["glide"])
         turn = float(nums["turn"])
         weight = float(nums.get("weight", 0.175))
+        diameter = float(nums.get("diameter", 0.211))
         fade = nums.get("fade")
 
         speed = min(14, speed)
@@ -143,7 +145,7 @@ class Discs:
             "I_xx": 6.183E-04 * weight / 0.175,
             "I_zz": 1.231E-03 * weight / 0.175,
             "mass": weight,
-            "diameter": 0.211,
+            "diameter": diameter,
             "rim_depth": rim_depth,
             "rim_width": rim_width,
             "height": 0.014,
