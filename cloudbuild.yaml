@@ -18,6 +18,8 @@ steps:
     - '--region'
     - 'us-central1'
     - '--allow-unauthenticated'
+    - '--port'
+    - '8000'
 
   # Deploy container image to EU
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -31,6 +33,8 @@ steps:
     - '--region'
     - 'europe-west1'
     - '--allow-unauthenticated'
+    - '--port'
+    - '8000'
 
 images:
   - 'gcr.io/$PROJECT_ID/frispy/$BRANCH_NAME:$COMMIT_SHA'
