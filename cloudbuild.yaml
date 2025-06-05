@@ -5,7 +5,8 @@ steps:
   # Push the container image to Container Registry
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'gcr.io/$PROJECT_ID/frispy/$BRANCH_NAME:$COMMIT_SHA']
-  # Deploy container image to Cloud Run
+
+  # Deploy container image to USA
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
     args:
@@ -16,5 +17,20 @@ steps:
     - 'gcr.io/$PROJECT_ID/frispy/$BRANCH_NAME:$COMMIT_SHA'
     - '--region'
     - 'us-central1'
+    - '--allow-unauthenticated'
+
+  # Deploy container image to EU
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+    - 'run'
+    - 'deploy'
+    - '$_SERVICE_ID-eu'
+    - '--image'
+    - 'gcr.io/$PROJECT_ID/frispy/$BRANCH_NAME:$COMMIT_SHA'
+    - '--region'
+    - 'europe-west1'
+    - '--allow-unauthenticated'
+
 images:
   - 'gcr.io/$PROJECT_ID/frispy/$BRANCH_NAME:$COMMIT_SHA'
