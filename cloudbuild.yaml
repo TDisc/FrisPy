@@ -42,10 +42,10 @@ steps:
     - '--port'
     - '8000'
     - '--memory'
-    - '2Gi'
+    - '1Gi'
     - '--cpu'
-    - '2'
-    - '--concurrency=2'
+    - '1'
+    - '--concurrency=1'
     - '--max-instances=40'
 
 images:
