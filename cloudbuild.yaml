@@ -20,12 +20,6 @@ steps:
     - '--allow-unauthenticated'
     - '--port'
     - '8000'
-    - '--memory'
-    - '2Gi'
-    - '--cpu'
-    - '2'
-    - '--concurrency=2'
-    - '--max-instances=40'
 
   # Deploy container image to EU
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -41,12 +35,6 @@ steps:
     - '--allow-unauthenticated'
     - '--port'
     - '8000'
-    - '--memory'
-    - '1Gi'
-    - '--cpu'
-    - '1'
-    - '--concurrency=1'
-    - '--max-instances=40'
 
 images:
   - 'gcr.io/$PROJECT_ID/frispy/$BRANCH_NAME:$COMMIT_SHA'
