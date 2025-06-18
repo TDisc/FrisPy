@@ -1,6 +1,7 @@
 #  Copyright (c) 2021 John Carrino
 import struct
 from dataclasses import dataclass
+from typing import List # Added for Python 3.8 compatibility
 import numpy as np
 from scipy.spatial.transform import Rotation
 
@@ -21,11 +22,11 @@ class ThrowData:
     OUTPUT_SCALE_FACTOR_8000DPS = (SENSORS_DPS_TO_RADS * 8000 / ((1 << 15) - 1))
 
     formatVersion: int
-    durationMicros: list[int]
-    accel0: list[np.ndarray]
-    gyros: list[np.ndarray]
-    accel1: list[np.ndarray]
-    accel2: list[np.ndarray]
+    durationMicros: List[int]
+    accel0: List[np.ndarray]
+    gyros: List[np.ndarray]
+    accel1: List[np.ndarray]
+    accel2: List[np.ndarray]
     endQ: Rotation
     temperature: float
     type: int
