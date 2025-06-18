@@ -1,5 +1,6 @@
 import pytest
 import math
+import logging
 from frispy.model import Model
 from frispy.discs import Discs
 from frispy.aero_calculator import calculate_aero_coefficients
