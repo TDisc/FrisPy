@@ -6,11 +6,12 @@ import logging
 from typing import Dict
 
 import numpy as np
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from scipy.spatial.transform import Rotation
 
-from frispy import Disc, Discs, Environment
+from frispy import Disc, Discs, Environment, Model
 from frispy.wind import ConstantWind
+from frispy.aero_calculator import calculate_aero_coefficients
 from flask_cors import CORS
 from flask_sock import Sock
 from frispy.disc import FrisPyResults
@@ -85,11 +86,12 @@ def flight_paths():
             res[discName] = to_result(content.get('gamma', 0), result)
     else:
         discs = content.get('disc_numbers')
-        for index, discNumbers in enumerate(discs):
-            content['flight_numbers'] = discNumbers
-            disc = create_disc(content)
-            result = compute_trajectory(disc)
-            res[index] = to_result(content.get('gamma', 0), result)
+        if discs:  # Check if discs is not None before iterating
+            for index, discNumbers in enumerate(discs):
+                content['flight_numbers'] = discNumbers
+                disc = create_disc(content)
+                result = compute_trajectory(disc)
+                res[index] = to_result(content.get('gamma', 0), result)
 
     return res
 
@@ -249,6 +251,25 @@ def to_flight_path_request(throw_summary: Dict) -> Dict:
         raise ValueError("Must specify flight_numbers")
 
     return flight_path_request
+
+
+@app.route("/api/aero_coefficients", methods=['POST'])
+def aero_coefficients():
+    content = request.json
+    if not content or 'flight_numbers' not in content:
+        return jsonify({"error": "Missing flight_numbers in request body"}), 400
+
+    flight_numbers = content['flight_numbers']
+    if not isinstance(flight_numbers, dict):
+        return jsonify({"error": "flight_numbers must be an object"}), 400
+
+    try:
+        model = Discs.from_flight_numbers(flight_numbers)
+    except Exception as e:
+        return jsonify({"error": f"Invalid flight_numbers: {str(e)}"}), 400
+
+    results = calculate_aero_coefficients(model)
+    return jsonify(results)
 
 
 @app.route("/")
