@@ -242,7 +242,7 @@ class EOM:
 
         xhat = np.array([1, 0, 0])
         angle_of_attack = 0
-        if np.linalg.norm(v_in_plane) > math.ulp(1.0):
+        if np.linalg.norm(v_in_plane) > 1e-12:
             xhat = v_in_plane / np.linalg.norm(v_in_plane)
             angle_of_attack = -np.arctan(v_dot_zhat / np.linalg.norm(v_in_plane))
         yhat = np.cross(zhat, xhat)
