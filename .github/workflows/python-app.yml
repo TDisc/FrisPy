@@ -5,9 +5,9 @@ name: Build Status
 
 on:
   push:
-    branches: [ develop ]  # Changed from master
+    branches: [ develop ]
   pull_request:
-    branches: [ develop ]  # Changed from master
+    branches: [ develop ]
 
 jobs:
   build:
@@ -20,7 +20,7 @@ jobs:
     - name: Set up Python 3.9
       uses: actions/setup-python@v2
       with:
-        python-version: '3.9' # Changed from 3.8
+        python-version: '3.9'
 
     - name: Install dependencies
       run: |
