@@ -50,7 +50,7 @@ class EOM:
         aoa = res["angle_of_attack"]
         v_norm = np.linalg.norm(velocity)
         vhat = np.array([1, 0, 0])
-        if v_norm > math.ulp(1):
+        if v_norm > 1e-12:
             vhat = velocity / v_norm
         force_amplitude = (
                 0.5
