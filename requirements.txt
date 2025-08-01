@@ -7,6 +7,6 @@ Flask==2.2.2
 Werkzeug==2.3.7
 gunicorn==20.1.0
 
-flask_cors==3.0.10
+flask_cors==5.0.0
 flask-sock==0.7.0
 
