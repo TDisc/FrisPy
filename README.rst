@@ -16,6 +16,9 @@ repository.
 Installation
 ------------
 
+For staged HTTP compression and compact rendering responses, see
+`Opt-in flight responses <docs/flight-response-options.rst>`_.
+
 From an Anaconda environment
 ----------------------------
 
