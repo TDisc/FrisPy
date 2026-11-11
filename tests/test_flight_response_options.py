@@ -82,7 +82,7 @@ def test_compact_preserves_samples_and_profiles(client, simulation, endpoint, pa
     assert all(len(values) == 40 for values in result.values())
     assert result['p'][0] == [1.235, -2.346, 0.123]
     assert result['qx'][0] == 0.123457
-    assert result['t'][-1] == 1.23457
+    assert result['t'][-1] == 1.23456789
     assert ('v' in result) == (profile == 'full')
     assert ('gamma' in result) == include_spin
 
@@ -138,3 +138,35 @@ def test_real_flight_compact_error_bounds(client):
                              ('qx', 0.0000005), ('qy', 0.0000005),
                              ('qz', 0.0000005), ('qw', 0.0000005), ('gamma', 0.000005)]:
         assert np.max(np.abs(np.asarray(compact[field]) - np.asarray(plain[field]))) <= tolerance + 1e-12
+
+@pytest.mark.parametrize('compact', [False, True])
+def test_websocket_chunks_preserve_boundaries_and_solver_state(compact):
+    from service.main import inc_send_over_websocket
+    from unittest.mock import MagicMock
+    disc = MagicMock()
+    chunk1 = SimpleNamespace(pos=[[1.12345678, 0, 1], [2.12345678, 0, 0.5]],
+        times=np.array([0., 1.000000001]), v=[np.array([1., 0, 0])]*2,
+        qx=np.array([0., 0.]), qy=np.array([0., 0.]), qz=np.array([0., 0.]), qw=np.array([1., 1.]),
+        gamma=[0., 1.123456789], z=np.array([1., 0.5]))
+    chunk2 = SimpleNamespace(**vars(chunk1))
+    chunk2.times=np.array([1.000000001,1.000000002])
+    chunk2.z=np.array([0.5,0.])
+    socket=MagicMock();socket.connected=True
+    options=ResponseOptions(version=2 if compact else 1)
+    with patch('service.main.compute_trajectory',side_effect=[chunk1,chunk2]) as compute:
+        assert inc_send_over_websocket(disc,0,socket,options)
+    first,second,terminal=[json.loads(call.args[0]) for call in socket.send.call_args_list]
+    assert first['t'][-1]==second['t'][0]==1.000000001
+    assert second['t'][1]>second['t'][0]
+    assert first['p'][0][0]==(1.123 if compact else 1.12345678)
+    assert 'v' in first and 'gamma' in first
+    assert terminal=={}
+    assert disc.set_initial_conditions_from_prev_results.call_args_list[0].args[0] is chunk1
+    assert compute.call_args_list[1].args[2]==chunk1.times[-1]
+
+
+def test_websocket_rejects_gzip():
+    from service.flight_response import parse_websocket_response_options
+    from werkzeug.exceptions import BadRequest
+    with pytest.raises(BadRequest,match='WebSocket compression'):
+        parse_websocket_response_options({'response_options':{'compression':'gzip'}})

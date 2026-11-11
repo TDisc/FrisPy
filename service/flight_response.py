@@ -41,6 +41,13 @@ def parse_response_options(content):
     return ResponseOptions(version, compression, profile, include_spin)
 
 
+def parse_websocket_response_options(content):
+    options = parse_response_options(content)
+    if options.compression != "identity":
+        raise BadRequest("WebSocket compression is not supported")
+    return options
+
+
 def format_flight_result(result, options):
     if options.version == 1:
         return result
@@ -53,15 +60,12 @@ def format_flight_result(result, options):
         return round(float(value), digits)
 
     compact = {
-        key: rounded(value, precision[key])
+        key: value if key == "t" else rounded(value, precision[key])
         for key, value in result.items()
         if not (options.profile == "render" and
                 (key == "v" or (key == "gamma" and not options.include_spin)))
     }
-    # Very short solver steps must not turn into duplicate timestamps.
-    times = compact["t"]
-    if any(right <= left for left, right in zip(times, times[1:])):
-        compact["t"] = result["t"]
+    # Exact timestamps preserve short steps and shared WebSocket chunk boundaries.
     return compact
 
 

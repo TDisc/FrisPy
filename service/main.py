@@ -16,7 +16,8 @@ from flask_cors import CORS
 from flask_sock import Sock
 from frispy.disc import FrisPyResults
 from service.flight_response import (
-    parse_response_options, format_flight_result, flight_response,
+    ResponseOptions, parse_response_options, parse_websocket_response_options,
+    format_flight_result, flight_response,
 )
 
 # import google.cloud.logging
@@ -36,9 +37,10 @@ def ws_flight_path(s):
             return
 
         content = json.loads(data)
+        options = parse_websocket_response_options(content)
         gamma = content.get('gamma', 0)
         disc = create_disc(content)
-        inc_send_over_websocket(disc, gamma, s)
+        inc_send_over_websocket(disc, gamma, s, options)
     finally:
         s.close()
 
@@ -51,24 +53,25 @@ def ws_flight_path_from_summary(s):
             return
 
         content = json.loads(data)
+        options = parse_websocket_response_options(content)
         content = to_flight_path_request(content)
 
         disc = create_disc(content)
-        inc_send_over_websocket(disc, 0, s)
+        inc_send_over_websocket(disc, 0, s, options)
     finally:
         s.close()
 
 
-def inc_send_over_websocket(disc, gamma, s) -> bool:
+def inc_send_over_websocket(disc, gamma, s, options=ResponseOptions()) -> bool:
     results = compute_trajectory(disc, 1.0)
-    s.send(json.dumps(to_result(gamma, results)))
+    s.send(json.dumps(format_flight_result(to_result(gamma, results), options)))
     disc.set_initial_conditions_from_prev_results(results)
     while results.z[-1] > 1e-6:
         # bail early if socket is closed
         if not s.connected:
             return False
         results = compute_trajectory(disc, 1.0, results.times[-1])
-        s.send(json.dumps(to_result(gamma, results)))
+        s.send(json.dumps(format_flight_result(to_result(gamma, results), options)))
         disc.set_initial_conditions_from_prev_results(results)
     # send empty object to signal end of flight
     s.send("{}")
