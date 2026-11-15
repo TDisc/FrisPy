@@ -15,6 +15,10 @@ from frispy.aero_calculator import calculate_aero_coefficients
 from flask_cors import CORS
 from flask_sock import Sock
 from frispy.disc import FrisPyResults
+from service.flight_response import (
+    ResponseOptions, parse_response_options, parse_websocket_response_options,
+    format_flight_result, flight_response,
+)
 
 # import google.cloud.logging
 # client = google.cloud.logging.Client()
@@ -33,9 +37,10 @@ def ws_flight_path(s):
             return
 
         content = json.loads(data)
+        options = parse_websocket_response_options(content)
         gamma = content.get('gamma', 0)
         disc = create_disc(content)
-        inc_send_over_websocket(disc, gamma, s)
+        inc_send_over_websocket(disc, gamma, s, options)
     finally:
         s.close()
 
@@ -48,24 +53,25 @@ def ws_flight_path_from_summary(s):
             return
 
         content = json.loads(data)
+        options = parse_websocket_response_options(content)
         content = to_flight_path_request(content)
 
         disc = create_disc(content)
-        inc_send_over_websocket(disc, 0, s)
+        inc_send_over_websocket(disc, 0, s, options)
     finally:
         s.close()
 
 
-def inc_send_over_websocket(disc, gamma, s) -> bool:
+def inc_send_over_websocket(disc, gamma, s, options=ResponseOptions()) -> bool:
     results = compute_trajectory(disc, 1.0)
-    s.send(json.dumps(to_result(gamma, results)))
+    s.send(json.dumps(format_flight_result(to_result(gamma, results), options)))
     disc.set_initial_conditions_from_prev_results(results)
     while results.z[-1] > 1e-6:
         # bail early if socket is closed
         if not s.connected:
             return False
         results = compute_trajectory(disc, 1.0, results.times[-1])
-        s.send(json.dumps(to_result(gamma, results)))
+        s.send(json.dumps(format_flight_result(to_result(gamma, results), options)))
         disc.set_initial_conditions_from_prev_results(results)
     # send empty object to signal end of flight
     s.send("{}")
@@ -76,6 +82,7 @@ def inc_send_over_websocket(disc, gamma, s) -> bool:
 @app.route('/api/flight_paths', methods=['POST'])
 def flight_paths():
     content = request.json
+    options = parse_response_options(content)
     discs = content.get('disc_names')
     res = {}
     if discs:
@@ -83,7 +90,7 @@ def flight_paths():
             content['disc_name'] = discName
             disc = create_disc(content)
             result = compute_trajectory(disc)
-            res[discName] = to_result(content.get('gamma', 0), result)
+            res[discName] = format_flight_result(to_result(content.get('gamma', 0), result), options)
     else:
         discs = content.get('disc_numbers')
         if discs:  # Check if discs is not None before iterating
@@ -91,9 +98,9 @@ def flight_paths():
                 content['flight_numbers'] = discNumbers
                 disc = create_disc(content)
                 result = compute_trajectory(disc)
-                res[index] = to_result(content.get('gamma', 0), result)
+                res[index] = format_flight_result(to_result(content.get('gamma', 0), result), options)
 
-    return res
+    return flight_response(res, options)
 
 
 # this method assumes the disc velocity is in the X direction.
@@ -104,9 +111,10 @@ def flight_paths():
 @app.route('/api/flight_path', methods=['POST'])
 def flight_path():
     content = request.json
+    options = parse_response_options(content)
     disc = create_disc(content)
     result = compute_trajectory(disc)
-    return to_result(content.get('gamma', 0), result)
+    return flight_response(format_flight_result(to_result(content.get('gamma', 0), result), options), options)
 
 
 # send over the throw summary to get the flight directly.
@@ -115,10 +123,11 @@ def flight_path():
 @app.route('/api/flight_path_from_summary', methods=['POST'])
 def flight_path_from_summary():
     content = request.json
+    options = parse_response_options(content)
     content = to_flight_path_request(content)
     disc = create_disc(content)
     result = compute_trajectory(disc)
-    return to_result(0, result)
+    return flight_response(format_flight_result(to_result(0, result), options), options)
 
 
 def create_disc(content) -> Disc:

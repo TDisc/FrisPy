@@ -12,13 +12,14 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    # Keep the runner on an OS with published Python 3.9 binaries.
+    runs-on: ubuntu-24.04
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v6
 
     - name: Set up Python 3.9
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v6
       with:
         python-version: '3.9'
 
